@@ -67,9 +67,11 @@ ${PKGMGR} nwg-displays
 # Additional Hyprland plugins and configurations
 hyprpm update
 hyprpm reload
-# hyprpm add https://github.com/hyprwm/hyprland-plugins
-# hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
-# hyprpm enable dynamic-cursors
+hyprpm add https://github.com/hyprwm/hyprland-plugins
+hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
+hyprpm enable dynamic-cursors
+hyprpm add https://github.com/horriblename/hyprgrass
+hyprpm enable hyprgrass
 
 # Success message
 echo -e "\nAll packages installed successfully!"
