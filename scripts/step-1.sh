@@ -59,6 +59,7 @@ builddir=$(pwd)
         sudo pacman -S tmux --noconfirm
         sudo pacman -S sshpass --noconfirm
         sudo pacman -S htop --noconfirm
+        sudo pacman -S glm --noconfirm
         paru -S nvtop-git --noconfirm
         paru -S lnav --noconfirm
 # Ensure Pipewire for audio
