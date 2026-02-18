@@ -1,6 +1,11 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+# Color definitions
+BLUE='\033[0;34m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'  # No Color
 
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
@@ -32,31 +37,33 @@ cache_sudo_credentials() {
     (while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &)
 }
 
-# Checks for active network connection
-if [[ -n "$(command -v nmcli)" && "$(nmcli -t -f STATE g)" != connected ]]; then
+# Function to install bashrc support (placeholder - extend as needed)
+install_bashrc_support() {
+    # This function ensures bashrc configurations are properly loaded
+    # Add any bashrc initialization logic here
+    return 0
+}
+
+# Check for active network connection
+if command_exists nmcli; then
+    state=$(nmcli -t -f STATE g)
+    if [[ "$state" != connected ]]; then
+        echo "Network connectivity is required to continue."
+        exit 1
+    fi
+else
+    # Fallback: ensure at least one interface has an IPv4 address
+    if ! ip -4 addr show | grep -q "inet "; then
+        echo "Network connectivity is required to continue."
+        exit 1
+    fi
+fi
+
+# Additional ping test to confirm internet reachability
+if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
     echo "Network connectivity is required to continue."
     exit 1
 fi
-
-# Check for active network connection
-    if command_exists nmcli; then
-        state=$(nmcli -t -f STATE g)
-        if [[ "$state" != connected ]]; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
-    else
-        # Fallback: ensure at least one interface has an IPv4 address
-        if ! ip -4 addr show | grep -q "inet "; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
-    fi
-        # Additional ping test to confirm internet reachability
-        if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
 
 
 

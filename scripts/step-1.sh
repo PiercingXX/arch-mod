@@ -41,6 +41,8 @@ builddir=$(pwd)
 # Install dependencies
         echo "# Installing dependencies..."
         sudo pacman -S trash-cli --noconfirm
+        sudo pacman -S base-devel gcc cmake meson --noconfirm
+        sudo pacman -S git make pkg-config --noconfirm
         sudo pacman -S fastfetch --noconfirm
         sudo pacman -S tree --noconfirm
         sudo pacman -S zoxide --noconfirm
@@ -71,7 +73,28 @@ builddir=$(pwd)
     echo -e "${YELLOW}Installing Paru, Flatpak, & Dependencies...${NC}"
         # Clone and install Paru
         echo "# Cloning and installing Paru..."
-        git clone https://aur.archlinux.org/paru-bin.git && cd paru-bin && makepkg -si --noconfirm && cd ..
+        if ! command -v paru &> /dev/null; then
+            PARU_BUILD_DIR=$(mktemp -d)
+            git clone https://aur.archlinux.org/paru-bin.git "$PARU_BUILD_DIR/paru-bin"
+            if [ -d "$PARU_BUILD_DIR/paru-bin" ]; then
+                cd "$PARU_BUILD_DIR/paru-bin" || exit
+                makepkg -si --noconfirm
+                PARU_INSTALL_STATUS=$?
+                cd "$builddir" || exit
+                rm -rf "$PARU_BUILD_DIR"
+                if [ $PARU_INSTALL_STATUS -eq 0 ]; then
+                    echo "Paru installed successfully!"
+                else
+                    echo "ERROR: Paru installation failed! Please install manually."
+                    exit 1
+                fi
+            else
+                echo "ERROR: Failed to clone paru repository."
+                exit 1
+            fi
+        else
+            echo "Paru already installed"
+        fi
         # Add Flatpak
         echo "# Installing Flatpak..."
         sudo pacman -S flatpak --noconfirm
@@ -81,7 +104,7 @@ builddir=$(pwd)
 # Installing more Depends
         echo "# Installing more dependencies..."
         paru -S dconf --noconfirm
-        paru -S cpio cmake meson --noconfirm
+        paru -S cpio --noconfirm
         paru -S wmctrl xdotool libinput-gestures --noconfirm
         paru -S multitail jump-bin --noconfirm
 
@@ -102,6 +125,12 @@ builddir=$(pwd)
 
 # Theme stuffs
     paru -S papirus-icon-theme-git --noconfirm
+    
+# Apply Icon Theme
+    echo -e "${YELLOW}Applying Papirus Icon Theme...${NC}"
+    dconf write /org/gnome/desktop/interface/icon-theme "'Papirus'"
+    gsettings set org.gnome.desktop.interface icon-theme "Papirus"
+    echo -e "${GREEN}Icon theme applied!${NC}"
 
 # Install fonts
     echo "Installing Fonts"
@@ -137,20 +166,36 @@ builddir=$(pwd)
         rm -rf workspaces-by-open-apps-main
     # Super Key
         echo -e "${YELLOW}Installing Super‑Key extension...${NC}"
-        git clone https://github.com/Tommimon/super-key.git
-        cd super-key || exit
-        ./build.sh -i
-        EXT_BUILD_DIR="$builddir/super-key"
-            if [ ! -d "$EXT_BUILD_DIR" ]; then
-                echo "Build output not found in $EXT_BUILD_DIR"
-                exit 1
+        SUPERKEY_BUILD_DIR=$(mktemp -d)
+        git clone https://github.com/Tommimon/super-key.git "$SUPERKEY_BUILD_DIR/super-key"
+        if [ -d "$SUPERKEY_BUILD_DIR/super-key" ]; then
+            cd "$SUPERKEY_BUILD_DIR/super-key" || exit
+            if [ -f "build.sh" ]; then
+                chmod +x ./build.sh
+                ./build.sh -i
+                SUPERKEY_BUILD_STATUS=$?
+            else
+                SUPERKEY_BUILD_STATUS=1
             fi
-        EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
-        EXT_ID="super-key@tommimon"   # <-- adjust if the folder name differs
-        mkdir -p "$EXT_DIR"
-        cp -r "$EXT_BUILD_DIR" "$EXT_DIR/$EXT_ID"
-        cd "$builddir" || exit
-        rm -rf super-key
+            if [ $SUPERKEY_BUILD_STATUS -eq 0 ]; then
+                EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
+                EXT_ID="super-key@tommimon"
+                mkdir -p "$EXT_DIR"
+                # Find and copy the built extension
+                if [ -d "$EXT_ID" ]; then
+                    cp -r "$EXT_ID" "$EXT_DIR/"
+                    echo "Super-key extension installed successfully"
+                else
+                    echo "Warning: Super-key extension build directory not found"
+                fi
+            else
+                echo "Warning: Super-key build failed, skipping extension installation"
+            fi
+            cd "$builddir" || exit
+            rm -rf "$SUPERKEY_BUILD_DIR"
+        else
+            echo "Warning: Failed to clone super-key repository"
+        fi
     echo -e "${GREEN}Gnome Extensions Installed Successfully!${NC}"
 
 # Apply Piercing Rice

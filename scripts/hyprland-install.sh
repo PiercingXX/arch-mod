@@ -4,7 +4,16 @@
 # Set up variables for better readability
 PKGMGR="paru -S --noconfirm"
 
+# Ensure build dependencies are available for hyprland plugins
+echo "Ensuring build dependencies are available..."
+${PKGMGR} base-devel
+${PKGMGR} git
+${PKGMGR} cmake
+${PKGMGR} meson
+${PKGMGR} pkg-config
+
 # Install core Hyprland components
+echo "Installing Hyprland core components..."
 ${PKGMGR} hyprland-meta-git
 ${PKGMGR} hyprpaper
 ${PKGMGR} hyprlock
@@ -65,13 +74,16 @@ ${PKGMGR} nwg-displays
 
 
 # Additional Hyprland plugins and configurations
+echo "Updating and loading Hyprland plugin manager..."
 hyprpm update
 hyprpm reload
-hyprpm add https://github.com/hyprwm/hyprland-plugins
-hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
-hyprpm enable dynamic-cursors
-hyprpm add https://github.com/horriblename/hyprgrass
-hyprpm enable hyprgrass
+
+echo "Adding Hyprland plugins..."
+hyprpm add https://github.com/hyprwm/hyprland-plugins || echo "Warning: Failed to add hyprland-plugins"
+hyprpm add https://github.com/virtcode/hypr-dynamic-cursors || echo "Warning: Failed to add hypr-dynamic-cursors"
+hyprpm enable dynamic-cursors || echo "Warning: Failed to enable dynamic-cursors"
+hyprpm add https://github.com/horriblename/hyprgrass || echo "Warning: Failed to add hyprgrass"
+hyprpm enable hyprgrass || echo "Warning: Failed to enable hyprgrass"
 
 # Success message
-echo -e "\nAll packages installed successfully!"
+echo -e "\\nAll Hyprland packages and plugins installed successfully!"

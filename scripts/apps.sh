@@ -96,7 +96,7 @@ username=$(id -un)
     ya pkg add yazi-rs/plugins:diff
 
 # Nvim & Depends
-    paru -Rs neovim --noconfirm
+    paru -Rs neovim --noconfirm 2>/dev/null || true
     paru -S neovim-nightly-bin --noconfirm
     sudo pacman -S nodejs npm --noconfirm
     sudo pacman -S ripgrep --noconfirm
@@ -108,12 +108,15 @@ username=$(id -un)
     sudo pacman -S chafa --noconfirm
     sudo pacman -S ripgrep --noconfirm
 
-# Opencode
-    paru -S opencode-bin --noconfirm
-
-# VScode
+# VScode - Install with necessary dependencies
+    echo "Installing VSCode and dependencies..."
+    sudo pacman -S xclip xsel --noconfirm  # Clipboard support
     paru -S visual-studio-code-bin --noconfirm
-    paru -S code-nautilus-git --noconfirm
+    # Verify installation
+    if ! command -v code &> /dev/null; then
+        echo "VSCode installation failed. Trying alternative installation..."
+        flatpak install flathub com.visualstudio.code -y || echo "Fallback: Failed to install VSCode"
+    fi
 
 # Blender
     flatpak install flathub org.blender.Blender -y
@@ -145,9 +148,9 @@ username=$(id -un)
         sudo pacman -S lib32-libxfixes --noconfirm 
         sudo pacman -S ib32-libxrandr --noconfirm 
         sudo pacman -S lib32-libxtst --noconfirm 
-        sudo pacman -S lib32-libpulse --noconfirm 
-        sudo pacman -S lib32-openssl --noconfirm 
-        sudo pacman -S lib32-sdl2--noconfirm 
+        sudo pacman -S lib32-libpulse --noconfirm
+        sudo pacman -S lib32-openssl --noconfirm
+        sudo pacman -S lib32-sdl2 --noconfirm 
     # If NVIDIA proprietary driver is present, install its 32-bit runtime pieces
         if lspci -nn | grep -qi 'NVIDIA'; then
             echo "[*] NVIDIA GPU detected; installing NVIDIA Vulkan runtime components..."
