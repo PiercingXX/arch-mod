@@ -150,20 +150,66 @@ builddir=$(pwd)
 
 # Extensions Install
     echo -e "${YELLOW}Installing Gnome Extensions...${NC}"
-    paru -S libayatana-appindicator-glib --noconfirm
-    paru -S gnome-shell-extension-blur-my-shell-git --noconfirm
-    paru -S gnome-shell-extension-just-perfection-desktop --noconfirm
-    paru -S gnome-shell-extension-pop-shell-git --noconfirm
-    paru -S gnome-shell-extension-gsconnect --noconfirm
-    paru -S nautilus-open-any-terminal --noconfirm
+    
+    # Ensure gnome-shell-extensions package is installed
+    sudo pacman -S gnome-shell-extensions --noconfirm
+    
+    # Install extension dependencies
+    paru -S libayatana-appindicator-glib --noconfirm || echo "Warning: libayatana-appindicator-glib install failed"
+    
+    # Install extensions with error handling
+    EXTENSIONS_TO_INSTALL=(
+        "gnome-shell-extension-blur-my-shell-git"
+        "gnome-shell-extension-just-perfection-desktop"
+        "gnome-shell-extension-gsconnect"
+    )
+    
+    for ext in "${EXTENSIONS_TO_INSTALL[@]}"; do
+        echo "Installing extension: $ext"
+        if paru -S "$ext" --noconfirm 2>/dev/null; then
+            echo "✓ $ext installed"
+        else
+            echo "⚠ Warning: $ext installation failed (may not exist in AUR)"
+        fi
+    done
+    
+    # Install pop-shell separately with extra handling
+    echo "Installing Pop Shell extension..."
+    paru -S gnome-shell-extension-pop-shell-git --noconfirm 2>/dev/null || paru -S pop-shell --noconfirm 2>/dev/null || echo "⚠ Warning: Pop Shell not available"
+    
+    # Nautilus extension
+    paru -S nautilus-open-any-terminal --noconfirm || echo "Warning: nautilus-open-any-terminal install failed"
+    
+    # Enable extensions via dconf
+    echo -e "${YELLOW}Enabling installed extensions...${NC}"
+    
+    # Set enabled extensions list
+    dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io']" 2>/dev/null || true
+    
+    echo -e "${GREEN}Extensions installation complete!${NC}"
+    
     # Workspaces Buttons with App Icons
-        curl -L https://codeload.github.com/Favo02/workspaces-by-open-apps/zip/refs/heads/main -o workspaces.zip
-        unzip workspaces.zip -d workspaces-by-open-apps-main
-        chmod -R u+x workspaces-by-open-apps-main
-        cd workspaces-by-open-apps-main/workspaces-by-open-apps-main || exit
-        sudo ./install.sh local-install
-        cd "$builddir" || exit
-        rm -rf workspaces-by-open-apps-main
+        echo -e "${YELLOW}Installing Workspaces by Open Apps extension...${NC}"
+        WORKSPACES_BUILD_DIR=$(mktemp -d)
+        curl -L https://codeload.github.com/Favo02/workspaces-by-open-apps/zip/refs/heads/main -o "$WORKSPACES_BUILD_DIR/workspaces.zip"
+        if [ $? -eq 0 ]; then
+            unzip "$WORKSPACES_BUILD_DIR/workspaces.zip" -d "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main"
+            chmod -R u+x "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main"
+            cd "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main/workspaces-by-open-apps-main" || exit
+            sudo ./install.sh local-install 2>/dev/null
+            if [ $? -eq 0 ]; then
+                echo "✓ Workspaces extension installed"
+                # Enable the extension
+                dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'workspaces-by-open-apps@favo02']" 2>/dev/null || true
+            else
+                echo "⚠ Warning: Workspaces extension installation failed"
+            fi
+            cd "$builddir" || exit
+        else
+            echo "⚠ Warning: Failed to download Workspaces extension"
+        fi
+        rm -rf "$WORKSPACES_BUILD_DIR"
+        
     # Super Key
         echo -e "${YELLOW}Installing Super‑Key extension...${NC}"
         SUPERKEY_BUILD_DIR=$(mktemp -d)
@@ -184,17 +230,19 @@ builddir=$(pwd)
                 # Find and copy the built extension
                 if [ -d "$EXT_ID" ]; then
                     cp -r "$EXT_ID" "$EXT_DIR/"
-                    echo "Super-key extension installed successfully"
+                    echo "✓ Super-key extension installed"
+                    # Enable the extension
+                    dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'workspaces-by-open-apps@favo02', 'super-key@tommimon']" 2>/dev/null || true
                 else
-                    echo "Warning: Super-key extension build directory not found"
+                    echo "⚠ Warning: Super-key extension build directory not found"
                 fi
             else
-                echo "Warning: Super-key build failed, skipping extension installation"
+                echo "⚠ Warning: Super-key build failed"
             fi
             cd "$builddir" || exit
             rm -rf "$SUPERKEY_BUILD_DIR"
         else
-            echo "Warning: Failed to clone super-key repository"
+            echo "⚠ Warning: Failed to clone super-key repository"
         fi
     echo -e "${GREEN}Gnome Extensions Installed Successfully!${NC}"
 
