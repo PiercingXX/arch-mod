@@ -96,7 +96,6 @@ username=$(id -un)
     ya pkg add yazi-rs/plugins:diff
 
 # Nvim & Depends
-    # Install dependencies
     echo "Installing Neovim dependencies..."
     sudo pacman -S nodejs npm --noconfirm
     sudo pacman -S ripgrep --noconfirm
@@ -106,39 +105,18 @@ username=$(id -un)
     paru -S python-pynvim --noconfirm || python3 -m pip install --user pynvim
     python3 -m pip install --user --upgrade pynvim 2>/dev/null || true
     sudo pacman -S chafa --noconfirm
-    echo "Installing Neovim Nightly"
-    # Remove stable neovim if it exists
+
+    echo "Installing Neovim Nightly (required): neovim-nightly-bin"
     sudo pacman -Rs neovim --noconfirm 2>/dev/null || true
-    
-    # Check and install dependencies for neovim-nightly-bin first
-    echo "Checking dependencies for neovim-nightly-bin..."
-    DEPS=$(paru -Si neovim-nightly-bin 2>/dev/null | grep "^Depends On" | sed 's/Depends On.*: //' | tr ' ' '\n' | grep -v '^$')
-    
-    if [ -z "$DEPS" ]; then
-        echo "⚠ Could not retrieve dependency info, attempting direct install..."
-    else
-        echo "Installing detected dependencies..."
-        echo "$DEPS" | while read -r dep; do
-            # Remove version specifiers (e.g., "package>=1.0" becomes "package")
-            dep_name=$(echo "$dep" | sed 's/[<>=!].*//')
-            if ! pacman -Q "$dep_name" &>/dev/null; then
-                echo "  Installing: $dep_name"
-                sudo pacman -S "$dep_name" --noconfirm 2>/dev/null || paru -S "$dep_name" --noconfirm 2>/dev/null || true
-            else
-                echo "  ✓ $dep_name already installed"
-            fi
-        done
+
+    if ! paru -S neovim-nightly-bin --noconfirm; then
+        echo "⚠ WARNING: neovim-nightly-bin failed to install"
     fi
-    
-    # Install nightly
-    echo "Installing neovim-nightly-bin..."
-    paru -S neovim-nightly-bin --noconfirm
-    
-    # Verify nvim is installed
+
     if command -v nvim &> /dev/null; then
-        echo "✓ Neovim nightly verified: $(nvim --version | head -n1)"
+        echo "✓ Neovim verified: $(nvim --version | head -n1)"
     else
-        echo "⚠ WARNING: Neovim nightly not installed"
+        echo "⚠ WARNING: Neovim is not installed"
     fi
 
 # Opencode

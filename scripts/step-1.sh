@@ -4,6 +4,11 @@
 username=$(id -un)
 builddir=$(pwd)
 
+# Fallback color definitions (script may be run standalone)
+: "${YELLOW:=''}"
+: "${GREEN:=''}"
+: "${NC:=''}"
+
 
 # Create Directories if needed
     echo -e "${YELLOW}Creating Necessary Directories...${NC}"
@@ -43,6 +48,7 @@ builddir=$(pwd)
         sudo pacman -S trash-cli --noconfirm
         sudo pacman -S base-devel gcc cmake meson --noconfirm
         sudo pacman -S git make pkg-config --noconfirm
+    sudo pacman -S rust --noconfirm
         sudo pacman -S fastfetch --noconfirm
         sudo pacman -S tree --noconfirm
         sudo pacman -S zoxide --noconfirm
@@ -62,8 +68,6 @@ builddir=$(pwd)
         sudo pacman -S sshpass --noconfirm
         sudo pacman -S htop --noconfirm
         sudo pacman -S glm --noconfirm
-        paru -S nvtop-git --noconfirm
-        paru -S lnav --noconfirm
 # Ensure Pipewire for audio
     sudo pacman -S pipewire wireplumber pipewire-pulse pipewire-alsa --noconfirm
     sudo pacman -S gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav --noconfirm
@@ -73,28 +77,40 @@ builddir=$(pwd)
     echo -e "${YELLOW}Installing Paru, Flatpak, & Dependencies...${NC}"
         # Clone and install Paru
         echo "# Cloning and installing Paru..."
-        if ! command -v paru &> /dev/null; then
+        if command -v paru &> /dev/null && paru --version &> /dev/null; then
+            echo "Paru already installed (working)"
+        else
+            echo "Paru missing or broken; building from source to match current libalpm..."
+            # Remove potentially broken prebuilt helper if present
+            sudo pacman -Rns --noconfirm paru-bin paru 2>/dev/null || true
+
             PARU_BUILD_DIR=$(mktemp -d)
-            git clone https://aur.archlinux.org/paru-bin.git "$PARU_BUILD_DIR/paru-bin"
-            if [ -d "$PARU_BUILD_DIR/paru-bin" ]; then
-                cd "$PARU_BUILD_DIR/paru-bin" || exit
+            git clone https://aur.archlinux.org/paru.git "$PARU_BUILD_DIR/paru"
+            if [ -d "$PARU_BUILD_DIR/paru" ]; then
+                cd "$PARU_BUILD_DIR/paru" || exit
                 makepkg -si --noconfirm
                 PARU_INSTALL_STATUS=$?
                 cd "$builddir" || exit
                 rm -rf "$PARU_BUILD_DIR"
-                if [ $PARU_INSTALL_STATUS -eq 0 ]; then
-                    echo "Paru installed successfully!"
-                else
-                    echo "ERROR: Paru installation failed! Please install manually."
+                if [ $PARU_INSTALL_STATUS -ne 0 ]; then
+                    echo "ERROR: Paru installation failed!"
                     exit 1
                 fi
+
+                if ! command -v paru &> /dev/null || ! paru --version &> /dev/null; then
+                    echo "ERROR: Paru installed but still not runnable."
+                    exit 1
+                fi
+                echo "Paru installed successfully!"
             else
                 echo "ERROR: Failed to clone paru repository."
                 exit 1
             fi
-        else
-            echo "Paru already installed"
         fi
+
+        # Packages that require AUR helper
+        paru -S nvtop-git --noconfirm
+        paru -S lnav --noconfirm
         # Add Flatpak
         echo "# Installing Flatpak..."
         sudo pacman -S flatpak --noconfirm
