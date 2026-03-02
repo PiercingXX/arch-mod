@@ -134,13 +134,6 @@ while true; do
                 wait
                 cd "$builddir" || exit
             echo -e "${GREEN}Core Apps Installed successfully!${NC}"
-            # Ollama install
-            echo -e "${YELLOW}Installing Ollama...${NC}"         cd scripts || exit
-                chmod u+x ollama-setup.sh
-                sudo ./ollama-setup.sh
-                wait
-                cd "$builddir" || exit
-            echo -e "${GREEN}Ollama Installed & Modified successfully!${NC}"
             # Hyprland install
             echo -e "${YELLOW}Installing Hyprland & Dependencies...${NC}"
                 cd scripts || exit
