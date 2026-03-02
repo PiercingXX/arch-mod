@@ -167,14 +167,6 @@ username=$(id -un)
     flatpak install flathub com.discordapp.Discord -y
     paru -S input-remapper --noconfirm
 
-# Ollama
-    curl -fsSL https://ollama.com/install.sh | sh
-    #ollama pull gpt-oss:20b
-    #ollama pull codellama:34b 
-    #ollama pull mistral:7b 
-    #ollama pull gemma3:27b-it-qat
-    #ollama pull gemma3:12b
-
 # Tailscale
     paru -S tailscale --noconfirm
     curl -fsSL https://tailscale.com/install.sh | sh
