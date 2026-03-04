@@ -165,7 +165,6 @@ username=$(id -un)
             sudo pacman -S --needed --noconfirm nvidia nvidia-utils lib32-nvidia-utils
         fi
     flatpak install flathub com.discordapp.Discord -y
-    paru -S input-remapper --noconfirm
 
 # Tailscale
     paru -S tailscale --noconfirm
