@@ -120,7 +120,7 @@ username=$(id -un)
     fi
 
 # Opencode
-    paru -S opencode-bin --noconfirm
+    paru -S opencode-desktop-bin --noconfirm
 
 # VScode
     paru -S visual-studio-code-bin --noconfirm
