@@ -127,10 +127,10 @@ username=$(id -un)
     paru -S code-nautilus-git --noconfirm
 
 # Blender
-    flatpak install flathub org.blender.Blender -y
+#    flatpak install flathub org.blender.Blender -y
 
 # Kdenlive
-    flatpak install flathub org.kde.kdenlive -y
+#    flatpak install flathub org.kde.kdenlive -y
 
 # Vial
     paru -S vial-appimage --noconfirm
