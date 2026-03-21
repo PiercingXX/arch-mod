@@ -67,7 +67,7 @@ username=$(id -un)
 # Synology
     paru -S synochat --noconfirm
     paru -S synology-drive --noconfirm
-    flatpak install flathub com.synology.synology-note-station -y
+    #flatpak install flathub com.synology.synology-note-station -y
     #Synology Drive doesnt support wayland so run this...
     QT_QPA_PLATFORM=xcb
 
