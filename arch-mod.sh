@@ -121,6 +121,17 @@ style_window_manager() {
     echo -e "${GREEN}${wm_name} config style applied successfully!${NC}"
 }
 
+style_busybox_profile() {
+    style_window_manager "BusyBox Profile" \
+        bspwm sxhkd i3 i3blocks \
+        kitty yazi rofi fastfetch cava eww
+}
+
+install_terminal_minimal_session() {
+    ensure_piercing_dots_repo
+    sudo bash "$(pwd)/piercing-dots/scripts/setup-terminal-session.sh"
+}
+
 window_manager_menu() {
     local options=(
         "Install + Style Hyprland"
@@ -131,6 +142,9 @@ window_manager_menu() {
         "Style i3 Only"
         "Install + Style bspwm"
         "Style bspwm Only"
+        "Install + Style BusyBox Profile"
+        "Style BusyBox Profile Only"
+        "Install Terminal Minimal Session"
         "Back"
     )
 
@@ -179,6 +193,19 @@ window_manager_menu() {
                 ;;
             "Style bspwm Only")
                 style_window_manager "bspwm" bspwm sxhkd kitty
+                ;;
+            "Install + Style BusyBox Profile")
+                cd scripts || exit
+                chmod u+x busybox-install.sh
+                ./busybox-install.sh
+                cd "$builddir" || exit
+                style_busybox_profile
+                ;;
+            "Style BusyBox Profile Only")
+                style_busybox_profile
+                ;;
+            "Install Terminal Minimal Session")
+                install_terminal_minimal_session
                 ;;
             "Back")
                 break
