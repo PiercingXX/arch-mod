@@ -169,9 +169,18 @@ builddir=$(pwd)
     
     # Ensure gnome-shell-extensions package is installed
     sudo pacman -S gnome-shell-extensions --noconfirm
-    
-    # Install extension dependencies
-    paru -S libayatana-appindicator-glib --noconfirm || echo "Warning: libayatana-appindicator-glib install failed"
+
+    # AppIndicator and KStatusNotifierItem Support (system tray icons)
+    echo -e "${YELLOW}Installing AppIndicator and KStatusNotifierItem Support...${NC}"
+    sudo pacman -S --needed --noconfirm gnome-shell-extension-appindicator libappindicator-gtk3 || echo "Warning: appindicator packages install failed"
+    paru -S --needed --noconfirm libayatana-appindicator 2>/dev/null || true
+
+    enable_gnome_extension() {
+        local uuid="$1"
+        if command -v gnome-extensions >/dev/null 2>&1; then
+            gnome-extensions enable "$uuid" 2>/dev/null || true
+        fi
+    }
     
     # Install extensions with error handling
     EXTENSIONS_TO_INSTALL=(
@@ -191,7 +200,11 @@ builddir=$(pwd)
     
     # Install pop-shell separately with extra handling
     echo "Installing Pop Shell extension..."
-    paru -S gnome-shell-extension-pop-shell-git --noconfirm 2>/dev/null || paru -S pop-shell --noconfirm 2>/dev/null || echo "⚠ Warning: Pop Shell not available"
+    paru -S --needed gnome-shell-extension-pop-shell --noconfirm 2>/dev/null \
+        || paru -S --needed gnome-shell-extension-pop-shell-git --noconfirm 2>/dev/null \
+        || paru -S --needed pop-shell --noconfirm 2>/dev/null \
+        || echo "⚠ Warning: Pop Shell not available"
+    enable_gnome_extension "pop-shell@system76.com"
     
     # Nautilus extension
     paru -S nautilus-open-any-terminal --noconfirm || echo "Warning: nautilus-open-any-terminal install failed"
@@ -200,25 +213,35 @@ builddir=$(pwd)
     echo -e "${YELLOW}Enabling installed extensions...${NC}"
     
     # Set enabled extensions list
-    dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io']" 2>/dev/null || true
+    dconf write /org/gnome/shell/enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com', 'blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'pop-shell@system76.com']" 2>/dev/null || true
+    enable_gnome_extension "appindicatorsupport@rgcjonas.gmail.com"
+    enable_gnome_extension "blur-my-shell@aunetx"
+    enable_gnome_extension "just-perfection-desktop@just-perfection"
+    enable_gnome_extension "gsconnect@andyholmes.github.io"
+    enable_gnome_extension "pop-shell@system76.com"
     
     echo -e "${GREEN}Extensions installation complete!${NC}"
     
     # Workspaces Buttons with App Icons
         echo -e "${YELLOW}Installing Workspaces by Open Apps extension...${NC}"
         WORKSPACES_BUILD_DIR=$(mktemp -d)
-        curl -L https://codeload.github.com/Favo02/workspaces-by-open-apps/zip/refs/heads/main -o "$WORKSPACES_BUILD_DIR/workspaces.zip"
-        if [ $? -eq 0 ]; then
-            unzip "$WORKSPACES_BUILD_DIR/workspaces.zip" -d "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main"
-            chmod -R u+x "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main"
-            cd "$WORKSPACES_BUILD_DIR/workspaces-by-open-apps-main/workspaces-by-open-apps-main" || exit
-            sudo ./install.sh local-install 2>/dev/null
-            if [ $? -eq 0 ]; then
-                echo "✓ Workspaces extension installed"
-                # Enable the extension
-                dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'workspaces-by-open-apps@favo02']" 2>/dev/null || true
+        if curl -fsSL https://codeload.github.com/Favo02/workspaces-by-open-apps/zip/refs/heads/main -o "$WORKSPACES_BUILD_DIR/workspaces.zip"; then
+            unzip -q "$WORKSPACES_BUILD_DIR/workspaces.zip" -d "$WORKSPACES_BUILD_DIR"
+
+            WORKSPACES_INSTALL_SH=$(find "$WORKSPACES_BUILD_DIR" -maxdepth 4 -type f -name install.sh -print -quit)
+            if [ -n "$WORKSPACES_INSTALL_SH" ]; then
+                WORKSPACES_SRC_DIR=$(dirname "$WORKSPACES_INSTALL_SH")
+                chmod +x "$WORKSPACES_INSTALL_SH"
+                (cd "$WORKSPACES_SRC_DIR" && ./install.sh local-install) 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    echo "✓ Workspaces extension installed"
+                    dconf write /org/gnome/shell/enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com', 'blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'pop-shell@system76.com', 'workspaces-by-open-apps@favo02']" 2>/dev/null || true
+                    enable_gnome_extension "workspaces-by-open-apps@favo02"
+                else
+                    echo "⚠ Warning: Workspaces extension installation failed"
+                fi
             else
-                echo "⚠ Warning: Workspaces extension installation failed"
+                echo "⚠ Warning: Could not locate install.sh in Workspaces by Open Apps archive"
             fi
             cd "$builddir" || exit
         else
@@ -243,14 +266,66 @@ builddir=$(pwd)
                 EXT_DIR="$HOME/.local/share/gnome-shell/extensions"
                 EXT_ID="super-key@tommimon"
                 mkdir -p "$EXT_DIR"
-                # Find and copy the built extension
-                if [ -d "$EXT_ID" ]; then
-                    cp -r "$EXT_ID" "$EXT_DIR/"
+                if [ -d "$EXT_DIR/$EXT_ID" ]; then
                     echo "✓ Super-key extension installed"
-                    # Enable the extension
-                    dconf write /org/gnome/shell/enabled-extensions "['blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'workspaces-by-open-apps@favo02', 'super-key@tommimon']" 2>/dev/null || true
                 else
-                    echo "⚠ Warning: Super-key extension build directory not found"
+                    SUPERKEY_EXT_SRC=$(find . -maxdepth 4 -type d -name "$EXT_ID" -print -quit)
+                    if [ -n "$SUPERKEY_EXT_SRC" ]; then
+                        rm -rf "$EXT_DIR/$EXT_ID"
+                        cp -r "$SUPERKEY_EXT_SRC" "$EXT_DIR/"
+                        echo "✓ Super-key extension installed"
+                    else
+                        echo "⚠ Warning: Super-key extension directory not found after build"
+                    fi
+                fi
+                dconf write /org/gnome/shell/enabled-extensions "['appindicatorsupport@rgcjonas.gmail.com', 'blur-my-shell@aunetx', 'just-perfection-desktop@just-perfection', 'gsconnect@andyholmes.github.io', 'pop-shell@system76.com', 'workspaces-by-open-apps@favo02', 'super-key@tommimon']" 2>/dev/null || true
+                enable_gnome_extension "super-key@tommimon"
+
+                # Optional: set Super-key default launcher to Ulauncher (if supported by the extension)
+                echo -e "${YELLOW}Configuring Super‑Key to launch Ulauncher (if supported)...${NC}"
+                SUPERKEY_SCHEMA=""
+                if [ -f "$EXT_DIR/$EXT_ID/metadata.json" ]; then
+                    SUPERKEY_SCHEMA=$(sed -n 's/.*"settings-schema"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$EXT_DIR/$EXT_ID/metadata.json" | head -n 1)
+                fi
+                if [ -z "$SUPERKEY_SCHEMA" ] && command -v gsettings >/dev/null 2>&1; then
+                    SUPERKEY_SCHEMA=$(gsettings list-schemas 2>/dev/null | grep -iE 'tommimon|super[- ]?key' | head -n 1)
+                fi
+
+                SUPERKEY_SCHEMA_DIR="$EXT_DIR/$EXT_ID/schemas"
+                if [ -d "$SUPERKEY_SCHEMA_DIR" ] && command -v glib-compile-schemas >/dev/null 2>&1; then
+                    glib-compile-schemas "$SUPERKEY_SCHEMA_DIR" 2>/dev/null || true
+                fi
+
+                if [ -n "$SUPERKEY_SCHEMA" ] && command -v gsettings >/dev/null 2>&1; then
+                    if [ -d "$SUPERKEY_SCHEMA_DIR" ]; then
+                        SUPERKEY_KEYS=$(gsettings --schemadir "$SUPERKEY_SCHEMA_DIR" list-keys "$SUPERKEY_SCHEMA" 2>/dev/null || true)
+                    else
+                        SUPERKEY_KEYS=$(gsettings list-keys "$SUPERKEY_SCHEMA" 2>/dev/null || true)
+                    fi
+
+                    # Try common key names for "launch command" style settings
+                    for key in command custom-command launcher; do
+                        if echo "$SUPERKEY_KEYS" | grep -qx "$key"; then
+                            if [ -d "$SUPERKEY_SCHEMA_DIR" ]; then
+                                gsettings --schemadir "$SUPERKEY_SCHEMA_DIR" set "$SUPERKEY_SCHEMA" "$key" "ulauncher-toggle" 2>/dev/null || true
+                            else
+                                gsettings set "$SUPERKEY_SCHEMA" "$key" "ulauncher-toggle" 2>/dev/null || true
+                            fi
+                        fi
+                    done
+
+                    # Try common key names for "desktop file/app id" style settings
+                    for key in application default-application default-app app; do
+                        if echo "$SUPERKEY_KEYS" | grep -qx "$key"; then
+                            if [ -d "$SUPERKEY_SCHEMA_DIR" ]; then
+                                gsettings --schemadir "$SUPERKEY_SCHEMA_DIR" set "$SUPERKEY_SCHEMA" "$key" "ulauncher.desktop" 2>/dev/null || true
+                            else
+                                gsettings set "$SUPERKEY_SCHEMA" "$key" "ulauncher.desktop" 2>/dev/null || true
+                            fi
+                        fi
+                    done
+                else
+                    echo "⚠ Warning: Could not determine Super‑Key settings schema; skipping Ulauncher default config"
                 fi
             else
                 echo "⚠ Warning: Super-key build failed"

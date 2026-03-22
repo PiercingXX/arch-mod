@@ -126,8 +126,6 @@ username=$(id -un)
     paru -S visual-studio-code-bin --noconfirm
     paru -S code-nautilus-git --noconfirm
 
-# Blender
-#    flatpak install flathub org.blender.Blender -y
 
 # Kdenlive
 #    flatpak install flathub org.kde.kdenlive -y
