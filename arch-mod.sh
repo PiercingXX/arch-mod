@@ -84,7 +84,7 @@ function msg_box() {
 function menu() {
     local options=(
         "Install Arch Mod"
-        "Window Managers (Install/Style)"
+        "Window Managers"
         "Optional Nvidia Drivers"
         "Optional Surface Kernel"
         "Reboot System"
@@ -100,31 +100,16 @@ ensure_piercing_dots_repo() {
     fi
 }
 
-style_window_manager() {
-    local wm_name="$1"
-    shift
+run_wm_install_script() {
+    local label="$1"
+    local script_name="$2"
 
-    ensure_piercing_dots_repo
-
-    sudo install -d -o "$username" -g "$username" "/home/$username/.config"
-
-    for config_dir in "$@"; do
-        if [ -d "piercing-dots/dots/$config_dir" ]; then
-            rm -rf "/home/$username/.config/$config_dir"
-            cp -Rf "piercing-dots/dots/$config_dir" "/home/$username/.config/"
-            sudo chown -R "$username:$username" "/home/$username/.config/$config_dir"
-        else
-            echo "Warning: Missing config directory piercing-dots/dots/$config_dir"
-        fi
-    done
-
-    echo -e "${GREEN}${wm_name} config style applied successfully!${NC}"
-}
-
-style_busybox_profile() {
-    style_window_manager "BusyBox Profile" \
-        bspwm sxhkd i3 i3blocks \
-        kitty yazi rofi fastfetch cava eww
+    echo -e "${YELLOW}Installing ${label}...${NC}"
+    cd scripts || exit
+    chmod u+x "$script_name"
+    ./$script_name
+    cd "$builddir" || exit
+    echo -e "${GREEN}${label} installed successfully!${NC}"
 }
 
 install_terminal_minimal_session() {
@@ -134,86 +119,61 @@ install_terminal_minimal_session() {
 
 window_manager_menu() {
     local options=(
-        "Install + Style Hyprland"
-        "Style Hyprland Only"
-        "Install + Style Sway"
-        "Style Sway Only"
-        "Install + Style i3"
-        "Style i3 Only"
-        "Install + Style bspwm"
-        "Style bspwm Only"
-        "Install + Style BusyBox Profile"
-        "Style BusyBox Profile Only"
+        "Install Hyprland"
+        "Install Sway"
+        "Install i3"
+        "Install bspwm"
+        "Install BusyBox Profile"
         "Install Terminal Minimal Session"
         "Back"
     )
+    local wm_choices
+    local wm_choice
 
     while true; do
         clear
-        echo -e "${BLUE}Window Manager Installer / Styler${NC}"
-        wm_choice=$(printf "%s\n" "${options[@]}" | gum choose --header "Choose a WM action:" --cursor.foreground 212 --selected.foreground 212)
+        echo -e "${BLUE}Window Manager Installer${NC}"
+        wm_choices=$(printf "%s\n" "${options[@]}" | gum choose --no-limit --header "Choose one or more installs:" --cursor.foreground 212 --selected.foreground 212) || break
 
-        case $wm_choice in
-            "Install + Style Hyprland")
-                cd scripts || exit
-                chmod u+x hyprland-install.sh
-                ./hyprland-install.sh
-                cd "$builddir" || exit
-                style_window_manager "Hyprland" hypr waybar fuzzel nwg-drawer wlogout nwg-look kitty yazi cava
-                ;;
-            "Style Hyprland Only")
-                style_window_manager "Hyprland" hypr waybar fuzzel nwg-drawer wlogout nwg-look kitty yazi cava
-                ;;
-            "Install + Style Sway")
-                cd scripts || exit
-                chmod u+x sway-install.sh
-                ./sway-install.sh
-                cd "$builddir" || exit
-                style_window_manager "Sway" sway waybar fuzzel nwg-drawer wlogout kitty yazi cava
-                ;;
-            "Style Sway Only")
-                style_window_manager "Sway" sway waybar fuzzel nwg-drawer wlogout kitty yazi cava
-                ;;
-            "Install + Style i3")
-                cd scripts || exit
-                chmod u+x i3-install.sh
-                ./i3-install.sh
-                cd "$builddir" || exit
-                style_window_manager "i3" i3 i3blocks kitty yazi
-                ;;
-            "Style i3 Only")
-                style_window_manager "i3" i3 i3blocks kitty yazi
-                ;;
-            "Install + Style bspwm")
-                cd scripts || exit
-                chmod u+x bspwm-install.sh
-                ./bspwm-install.sh
-                cd "$builddir" || exit
-                style_window_manager "bspwm" bspwm sxhkd kitty
-                ;;
-            "Style bspwm Only")
-                style_window_manager "bspwm" bspwm sxhkd kitty
-                ;;
-            "Install + Style BusyBox Profile")
-                cd scripts || exit
-                chmod u+x busybox-install.sh
-                ./busybox-install.sh
-                cd "$builddir" || exit
-                style_busybox_profile
-                ;;
-            "Style BusyBox Profile Only")
-                style_busybox_profile
-                ;;
-            "Install Terminal Minimal Session")
-                install_terminal_minimal_session
-                ;;
-            "Back")
-                break
-                ;;
-        esac
+        [ -n "$wm_choices" ] || break
+
+        if printf "%s\n" "$wm_choices" | grep -Fxq "Back" && [ "$(printf "%s\n" "$wm_choices" | wc -l)" -eq 1 ]; then
+            break
+        fi
+
+        while IFS= read -r wm_choice; do
+            case $wm_choice in
+                "Install Hyprland")
+                    run_wm_install_script "Hyprland" "hyprland-install.sh"
+                    ;;
+                "Install Sway")
+                    run_wm_install_script "Sway" "sway-install.sh"
+                    ;;
+                "Install i3")
+                    run_wm_install_script "i3" "i3-install.sh"
+                    ;;
+                "Install bspwm")
+                    run_wm_install_script "bspwm" "bspwm-install.sh"
+                    ;;
+                "Install BusyBox Profile")
+                    run_wm_install_script "BusyBox Profile" "busybox-install.sh"
+                    ;;
+                "Install Terminal Minimal Session")
+                    install_terminal_minimal_session
+                    ;;
+                "Back")
+                    ;;
+            esac
+        done <<< "$wm_choices"
 
         read -n 1 -s -r -p "Press any key to continue..."; echo
     done
+}
+
+prompt_install_window_managers_after_install() {
+    if gum confirm "Install window managers before reboot?"; then
+        window_manager_menu
+    fi
 }
 # Main menu loop
 while true; do
@@ -274,6 +234,7 @@ while true; do
             # Clean Up
                 rm -rf piercing-dots
             echo -e "${GREEN}PiercingXX Gnome Customizations Applied successfully!${NC}"
+            prompt_install_window_managers_after_install
             msg_box "System will reboot now."
             sudo reboot
             ;;
@@ -284,7 +245,7 @@ while true; do
                 sudo ./nvidia.sh
                 cd "$builddir" || exit
             ;;
-        "Window Managers (Install/Style)")
+        "Window Managers")
             window_manager_menu
             ;;
         "Optional Surface Kernel")

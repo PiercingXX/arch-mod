@@ -1,28 +1,45 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
-set -e
+set -euo pipefail
 
-PKGMGR="paru -S --noconfirm --needed"
+PKGMGR=(paru -S --noconfirm --needed)
 
-echo "Installing BusyBox core..."
-${PKGMGR} busybox busybox-suid
+install_group() {
+  local label="$1"
+  shift
 
-echo "Installing shell and core utilities..."
-${PKGMGR} bash coreutils findutils gawk grep sed tar gzip unzip xz
+  echo "$label..."
+  "${PKGMGR[@]}" "$@"
+}
 
-echo "Installing Hypr-like desktop tooling (Wayland + X11 fallback)..."
-${PKGMGR} \
-  kitty yazi nautilus \
-  waybar wlogout nwg-look \
-  wl-clipboard cliphist hyprshot grim slurp \
-  pavucontrol playerctl cava \
-  networkmanager network-manager-applet bluez bluez-utils bluetuith \
-  libnotify swaync polkit-gnome \
-  brightnessctl light \
-  rofi xclip picom polybar feh flameshot
+echo "Installing BusyBox X11 profile prerequisites..."
 
-echo "Installing portal/session helpers..."
-${PKGMGR} xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-hyprland seatd
+install_group "Installing BusyBox userspace" \
+  busybox busybox-suid bash
 
-echo "BusyBox Hypr-like dependency profile installed successfully!"
+install_group "Installing bspwm session components" \
+  bspwm sxhkd polybar picom \
+  xorg-server xorg-xrandr xorg-xsetroot xorg-setxkbmap xorg-xrdb xorg-xinput numlockx
+
+install_group "Installing terminal and file tools" \
+  kitty tmux yazi nautilus
+
+install_group "Installing launcher, clipboard, screenshot, and wallpaper tools" \
+  rofi xclip flameshot hsetroot jq
+
+install_group "Installing audio, notification, and brightness tools" \
+  pipewire pipewire-pulse wireplumber \
+  pavucontrol playerctl libnotify dunst brightnessctl light cava
+
+install_group "Installing network, auth, input, and bluetooth helpers" \
+  networkmanager network-manager-applet polkit-gnome \
+  fcitx5 bluez bluez-utils bluetuith
+
+install_group "Installing lock screen support" \
+  i3lock
+
+echo
+echo "BusyBox X11 profile installed successfully."
+echo "This profile is intentionally X11+bspwm focused and assumes piercing-dots"
+echo "has already populated your shared configs and ~/.scripts during the main install."
