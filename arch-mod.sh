@@ -141,7 +141,8 @@ window_manager_menu() {
             break
         fi
 
-        while IFS= read -r wm_choice; do
+        mapfile -t _wm_arr <<< "$wm_choices"
+        for wm_choice in "${_wm_arr[@]}"; do
             case $wm_choice in
                 "Install Hyprland")
                     run_wm_install_script "Hyprland" "hyprland-install.sh"
@@ -164,7 +165,7 @@ window_manager_menu() {
                 "Back")
                     ;;
             esac
-        done <<< "$wm_choices"
+        done
 
         read -n 1 -s -r -p "Press any key to continue..."; echo
     done
