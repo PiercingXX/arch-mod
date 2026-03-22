@@ -104,15 +104,12 @@ run_wm_install_script() {
     local label="$1"
     local script_name="$2"
 
-    echo "DEBUG: run_wm_install_script called with label=[$label] script_name=[$script_name]"
-    echo -e "${YELLOW}Installing ${label}...${NC}"
+    echo -e "${YELLOW}Installing ${label}...${NC}" | tee -a /tmp/wm_install.log
     cd scripts || exit
     chmod u+x "$script_name"
-    echo "DEBUG: About to run ./$script_name"
-    ./$script_name
-    echo "DEBUG: Script finished with exit code $?"
+    ./$script_name 2>&1 | tee -a /tmp/wm_install.log
     cd "$builddir" || exit
-    echo -e "${GREEN}${label} installed successfully!${NC}"
+    echo -e "${GREEN}${label} installed successfully!${NC}" | tee -a /tmp/wm_install.log
 }
 
 install_terminal_minimal_session() {
@@ -145,9 +142,7 @@ window_manager_menu() {
         fi
 
         mapfile -t _wm_arr <<< "$wm_choices"
-        echo "DEBUG: Selected items: ${_wm_arr[@]}"
         for wm_choice in "${_wm_arr[@]}"; do
-            echo "DEBUG: Processing choice: [$wm_choice]"
             case $wm_choice in
                 "Install Hyprland")
                     run_wm_install_script "Hyprland" "hyprland-install.sh"
