@@ -84,12 +84,109 @@ function msg_box() {
 function menu() {
     local options=(
         "Install Arch Mod"
+        "Window Managers (Install/Style)"
         "Optional Nvidia Drivers"
         "Optional Surface Kernel"
         "Reboot System"
         "Exit"
     )
     printf "%s\n" "${options[@]}" | gum choose --header "Run Options In Order:" --cursor.foreground 212 --selected.foreground 212
+}
+
+ensure_piercing_dots_repo() {
+    if [ ! -d "piercing-dots/.git" ]; then
+        rm -rf piercing-dots
+        git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
+    fi
+}
+
+style_window_manager() {
+    local wm_name="$1"
+    shift
+
+    ensure_piercing_dots_repo
+
+    sudo install -d -o "$username" -g "$username" "/home/$username/.config"
+
+    for config_dir in "$@"; do
+        if [ -d "piercing-dots/dots/$config_dir" ]; then
+            rm -rf "/home/$username/.config/$config_dir"
+            cp -Rf "piercing-dots/dots/$config_dir" "/home/$username/.config/"
+            sudo chown -R "$username:$username" "/home/$username/.config/$config_dir"
+        else
+            echo "Warning: Missing config directory piercing-dots/dots/$config_dir"
+        fi
+    done
+
+    echo -e "${GREEN}${wm_name} config style applied successfully!${NC}"
+}
+
+window_manager_menu() {
+    local options=(
+        "Install + Style Hyprland"
+        "Style Hyprland Only"
+        "Install + Style Sway"
+        "Style Sway Only"
+        "Install + Style i3"
+        "Style i3 Only"
+        "Install + Style bspwm"
+        "Style bspwm Only"
+        "Back"
+    )
+
+    while true; do
+        clear
+        echo -e "${BLUE}Window Manager Installer / Styler${NC}"
+        wm_choice=$(printf "%s\n" "${options[@]}" | gum choose --header "Choose a WM action:" --cursor.foreground 212 --selected.foreground 212)
+
+        case $wm_choice in
+            "Install + Style Hyprland")
+                cd scripts || exit
+                chmod u+x hyprland-install.sh
+                ./hyprland-install.sh
+                cd "$builddir" || exit
+                style_window_manager "Hyprland" hypr waybar fuzzel nwg-drawer wlogout nwg-look kitty yazi cava
+                ;;
+            "Style Hyprland Only")
+                style_window_manager "Hyprland" hypr waybar fuzzel nwg-drawer wlogout nwg-look kitty yazi cava
+                ;;
+            "Install + Style Sway")
+                cd scripts || exit
+                chmod u+x sway-install.sh
+                ./sway-install.sh
+                cd "$builddir" || exit
+                style_window_manager "Sway" sway waybar fuzzel nwg-drawer wlogout kitty yazi cava
+                ;;
+            "Style Sway Only")
+                style_window_manager "Sway" sway waybar fuzzel nwg-drawer wlogout kitty yazi cava
+                ;;
+            "Install + Style i3")
+                cd scripts || exit
+                chmod u+x i3-install.sh
+                ./i3-install.sh
+                cd "$builddir" || exit
+                style_window_manager "i3" i3 i3blocks kitty yazi
+                ;;
+            "Style i3 Only")
+                style_window_manager "i3" i3 i3blocks kitty yazi
+                ;;
+            "Install + Style bspwm")
+                cd scripts || exit
+                chmod u+x bspwm-install.sh
+                ./bspwm-install.sh
+                cd "$builddir" || exit
+                style_window_manager "bspwm" bspwm sxhkd kitty
+                ;;
+            "Style bspwm Only")
+                style_window_manager "bspwm" bspwm sxhkd kitty
+                ;;
+            "Back")
+                break
+                ;;
+        esac
+
+        read -n 1 -s -r -p "Press any key to continue..."; echo
+    done
 }
 # Main menu loop
 while true; do
@@ -134,13 +231,8 @@ while true; do
                 wait
                 cd "$builddir" || exit
             echo -e "${GREEN}Core Apps Installed successfully!${NC}"
-            # Hyprland install
-            echo -e "${YELLOW}Installing Hyprland & Dependencies...${NC}"
-                cd scripts || exit
-                chmod u+x hyprland-install.sh
-                ./hyprland-install.sh
-                cd "$builddir" || exit
-            echo -e "${GREEN}Hyprland & Dependencies Installed successfully!${NC}"
+            # Window managers now installed from dedicated menu option
+            echo -e "${YELLOW}Window manager install/style is now in the Window Managers menu option.${NC}"
             # Enable Bluetooth again
                 sudo systemctl start bluetooth
                 sudo systemctl enable bluetooth
@@ -164,6 +256,9 @@ while true; do
                 chmod +x ./nvidia.sh
                 sudo ./nvidia.sh
                 cd "$builddir" || exit
+            ;;
+        "Window Managers (Install/Style)")
+            window_manager_menu
             ;;
         "Optional Surface Kernel")
             echo -e "${YELLOW}Microsoft Surface Kernel...${NC}"            
