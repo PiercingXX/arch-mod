@@ -133,39 +133,35 @@ window_manager_menu() {
     while true; do
         clear
         echo -e "${BLUE}Window Manager Installer${NC}"
-        wm_choices=$(printf "%s\n" "${options[@]}" | gum choose --no-limit --header "Choose one or more installs:" --cursor.foreground 212 --selected.foreground 212) || break
+        wm_choices=$(printf "%s\n" "${options[@]}" | gum choose --header "Choose one or more installs:" --cursor.foreground 212 --selected.foreground 212) || break
 
         [ -n "$wm_choices" ] || break
 
-        if printf "%s\n" "$wm_choices" | grep -Fxq "Back" && [ "$(printf "%s\n" "$wm_choices" | wc -l)" -eq 1 ]; then
+        if [ "$wm_choices" = "Back" ]; then
             break
         fi
 
-        mapfile -t _wm_arr <<< "$wm_choices"
-        for wm_choice in "${_wm_arr[@]}"; do
-            case $wm_choice in
-                "Install Hyprland")
-                    run_wm_install_script "Hyprland" "hyprland-install.sh"
-                    ;;
-                "Install Sway")
-                    run_wm_install_script "Sway" "sway-install.sh"
-                    ;;
-                "Install i3")
-                    run_wm_install_script "i3" "i3-install.sh"
-                    ;;
-                "Install bspwm")
-                    run_wm_install_script "bspwm" "bspwm-install.sh"
-                    ;;
-                "Install BusyBox Profile")
-                    run_wm_install_script "BusyBox Profile" "busybox-install.sh"
-                    ;;
-                "Install Terminal Minimal Session")
-                    install_terminal_minimal_session
-                    ;;
-                "Back")
-                    ;;
-            esac
-        done
+        wm_choice="$wm_choices"
+        case $wm_choice in
+            "Install Hyprland")
+                run_wm_install_script "Hyprland" "hyprland-install.sh"
+                ;;
+            "Install Sway")
+                run_wm_install_script "Sway" "sway-install.sh"
+                ;;
+            "Install i3")
+                run_wm_install_script "i3" "i3-install.sh"
+                ;;
+            "Install bspwm")
+                run_wm_install_script "bspwm" "bspwm-install.sh"
+                ;;
+            "Install BusyBox Profile")
+                run_wm_install_script "BusyBox Profile" "busybox-install.sh"
+                ;;
+            "Install Terminal Minimal Session")
+                install_terminal_minimal_session
+                ;;
+        esac
 
         read -n 1 -s -r -p "Press any key to continue..."; echo
     done
