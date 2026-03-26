@@ -63,7 +63,7 @@ builddir=$(pwd)
         sudo pacman -S reflector --noconfirm
         sudo pacman -S zip unzip gzip tar make wget tar fontconfig --noconfirm
         sudo pacman -Syu linux-firmware --noconfirm
-        sudo pacman -S bc brightnessctl dunst --noconfirm        
+        sudo pacman -S bc brightnessctl --noconfirm        
         sudo pacman -S tmux --noconfirm
         sudo pacman -S sshpass --noconfirm
         sudo pacman -S htop --noconfirm

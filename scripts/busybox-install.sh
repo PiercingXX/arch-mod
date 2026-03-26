@@ -30,7 +30,7 @@ install_group "Installing launcher, clipboard, screenshot, and wallpaper tools" 
 
 install_group "Installing audio, notification, and brightness tools" \
   pipewire pipewire-pulse wireplumber \
-  pavucontrol playerctl libnotify dunst brightnessctl light cava
+  pavucontrol playerctl libnotify brightnessctl light cava
 
 install_group "Installing network, auth, input, and bluetooth helpers" \
   networkmanager network-manager-applet polkit-gnome \
