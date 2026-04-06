@@ -180,10 +180,6 @@ while true; do
     choice=$(menu)
     case $choice in
         "Install Arch Mod")
-            # Turn off sleep/suspend to avoid interruptions
-                gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'false'
-                gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-type 'false'
-                gsettings set org.gnome.settings-daemon.plugins.power idle-dim 'false'
             echo -e "${YELLOW}Installing Essentials...${NC}"
             # Essentials
                 cd scripts || exit
@@ -225,9 +221,19 @@ while true; do
                 ./gnome-customizations.sh
                 wait
                 cd "$builddir" || exit
+            # Install Pop Shell
+                chmod u+x scripts/install-pop-shell.sh
+                ./scripts/install-pop-shell.sh
+                wait
+                cd "$builddir" || exit
             # Replace .bashrc
                 cp -f piercing-dots/resources/bash/.bashrc /home/"$username"/.bashrc
                 source "$HOME/.bashrc"
+            # Install Printers
+                chmod u+x scripts/install-printers.sh
+                ./scripts/install-printers.sh
+                wait
+                cd "$builddir" || exit
             # Clean Up
                 rm -rf piercing-dots
             echo -e "${GREEN}PiercingXX Gnome Customizations Applied successfully!${NC}"
