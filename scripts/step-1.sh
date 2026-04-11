@@ -84,28 +84,32 @@ builddir=$(pwd)
             # Remove potentially broken prebuilt helper if present
             sudo pacman -Rns --noconfirm paru-bin paru 2>/dev/null || true
 
-            PARU_BUILD_DIR=$(mktemp -d)
-            git clone https://aur.archlinux.org/paru.git "$PARU_BUILD_DIR/paru"
-            if [ -d "$PARU_BUILD_DIR/paru" ]; then
-                cd "$PARU_BUILD_DIR/paru" || exit
-                makepkg -si --noconfirm
-                PARU_INSTALL_STATUS=$?
-                cd "$builddir" || exit
-                rm -rf "$PARU_BUILD_DIR"
-                if [ $PARU_INSTALL_STATUS -ne 0 ]; then
-                    echo "ERROR: Paru installation failed!"
-                    exit 1
-                fi
+            # Ensure build prerequisites are present on fresh systems.
+            sudo pacman -S --needed --noconfirm git base-devel
 
-                if ! command -v paru &> /dev/null || ! paru --version &> /dev/null; then
-                    echo "ERROR: Paru installed but still not runnable."
-                    exit 1
-                fi
-                echo "Paru installed successfully!"
-            else
+            PARU_BUILD_DIR=$(mktemp -d /tmp/paru-build.XXXXXX)
+            if ! git clone https://aur.archlinux.org/paru.git "$PARU_BUILD_DIR/paru"; then
                 echo "ERROR: Failed to clone paru repository."
+                rm -rf "$PARU_BUILD_DIR"
                 exit 1
             fi
+
+            cd "$PARU_BUILD_DIR/paru" || exit
+            makepkg -si --noconfirm --needed
+            PARU_INSTALL_STATUS=$?
+            cd "$builddir" || exit
+            rm -rf "$PARU_BUILD_DIR"
+
+            if [ $PARU_INSTALL_STATUS -ne 0 ]; then
+                echo "ERROR: Paru installation failed!"
+                exit 1
+            fi
+
+            if ! command -v paru &> /dev/null || ! paru --version &> /dev/null; then
+                echo "ERROR: Paru installed but still not runnable."
+                exit 1
+            fi
+            echo "Paru installed successfully!"
         fi
 
         # Packages that require AUR helper
