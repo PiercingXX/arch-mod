@@ -75,43 +75,10 @@ builddir=$(pwd)
 
 # Add Paru, Flatpak, & Dependencies if needed
     echo -e "${YELLOW}Installing Paru, Flatpak, & Dependencies...${NC}"
-        # Clone and install Paru
-        echo "# Cloning and installing Paru..."
-        if command -v paru &> /dev/null && paru --version &> /dev/null; then
-            echo "Paru already installed (working)"
-        else
-            echo "Paru missing or broken; building from source to match current libalpm..."
-            # Remove potentially broken prebuilt helper if present
-            sudo pacman -Rns --noconfirm paru-bin paru 2>/dev/null || true
-
-            # Ensure build prerequisites are present on fresh systems.
-            sudo pacman -S --needed --noconfirm git base-devel
-
-            PARU_BUILD_DIR=$(mktemp -d /tmp/paru-build.XXXXXX)
-            if ! git clone https://aur.archlinux.org/paru.git "$PARU_BUILD_DIR/paru"; then
-                echo "ERROR: Failed to clone paru repository."
-                rm -rf "$PARU_BUILD_DIR"
-                exit 1
-            fi
-
-            cd "$PARU_BUILD_DIR/paru" || exit
-            makepkg -si --noconfirm --needed
-            PARU_INSTALL_STATUS=$?
-            cd "$builddir" || exit
-            rm -rf "$PARU_BUILD_DIR"
-
-            if [ $PARU_INSTALL_STATUS -ne 0 ]; then
-                echo "ERROR: Paru installation failed!"
-                exit 1
-            fi
-
-            if ! command -v paru &> /dev/null || ! paru --version &> /dev/null; then
-                echo "ERROR: Paru installed but still not runnable."
-                exit 1
-            fi
-            echo "Paru installed successfully!"
-        fi
-
+        # Install Paru
+        # Ensure build prerequisites are present and avoid cargo provider prompt under --noconfirm.
+        sudo pacman -S --needed --noconfirm git base-devel rust cargo
+        git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si --noconfirm && cd ..
         # Packages that require AUR helper
         paru -S nvtop-git --noconfirm
         paru -S lnav --noconfirm
