@@ -44,26 +44,34 @@ install_bashrc_support() {
     return 0
 }
 
-# Check for active network connection
-if command_exists nmcli; then
-    state=$(nmcli -t -f STATE g)
-    if [[ "$state" != connected ]]; then
-        echo "Network connectivity is required to continue."
-        exit 1
-    fi
-else
-    # Fallback: ensure at least one interface has an IPv4 address
-    if ! ip -4 addr show | grep -q "inet "; then
-        echo "Network connectivity is required to continue."
-        exit 1
-    fi
-fi
+ensure_network_online() {
+    local state=""
 
-# Additional ping test to confirm internet reachability
-if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
-    echo "Network connectivity is required to continue."
-    exit 1
-fi
+    if command_exists nmcli && state=$(nmcli -t -f STATE g 2>/dev/null); then
+        if [[ "$state" != connected ]]; then
+            echo "Network connectivity is required to continue."
+            echo "nmcli reports state: $state"
+        fi
+    else
+        echo "NetworkManager status unavailable, falling back to route/interface checks..."
+    fi
+
+    if ip route show default 2>/dev/null | grep -q '^default ' && ip -4 addr show up 2>/dev/null | grep -q "inet "; then
+        return 0
+    fi
+
+    if ! ip -4 addr show up 2>/dev/null | grep -q "inet "; then
+        echo "Network connectivity is required to continue."
+        exit 1
+    fi
+
+    if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
+        if ! ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+            echo "Network connectivity is required to continue."
+            exit 1
+        fi
+    fi
+}
 
 
 
@@ -73,6 +81,9 @@ builddir=$(pwd)
 
 # Cache sudo credentials
 cache_sudo_credentials
+
+# Require network for installs/downloads
+ensure_network_online
 
 # Function to display a message box using gum
 function msg_box() {
@@ -107,7 +118,11 @@ run_wm_install_script() {
     echo -e "${YELLOW}Installing ${label}...${NC}" | tee -a /tmp/wm_install.log
     cd scripts || exit
     chmod u+x "$script_name"
-    ./$script_name 2>&1 | tee -a /tmp/wm_install.log
+    if ! ./"$script_name" 2>&1 | tee -a /tmp/wm_install.log; then
+        cd "$builddir" || true
+        echo -e "${YELLOW}${label} install encountered errors — check /tmp/wm_install.log.${NC}" | tee -a /tmp/wm_install.log
+        return 1
+    fi
     cd "$builddir" || exit
     echo -e "${GREEN}${label} installed successfully!${NC}" | tee -a /tmp/wm_install.log
 }

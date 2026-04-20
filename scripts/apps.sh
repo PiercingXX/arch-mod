@@ -18,20 +18,20 @@ username=$(id -un)
     paru -S vlc --noconfirm
     paru -S ventoy-bin --noconfirm
     paru -S proton-vpn-gtk-app --noconfirm
-    flatpak install flathub net.waterfox.waterfox -y
-    flatpak install flathub md.obsidian.Obsidian -y
-    flatpak install flathub org.libreoffice.LibreOffice -y
-    flatpak install flathub org.gnome.SimpleScan -y
-    flatpak install flathub org.blender.Blender -y
-    flatpak install flathub com.mattjakeman.ExtensionManager -y
-    flatpak install flathub org.qbittorrent.qBittorrent -y
-    flatpak install flathub io.missioncenter.MissionCenter -y
-    flatpak install flathub io.github.shiftey.Desktop -y #Github Desktop
-    flatpak install --noninteractive flathub io.github.realmazharhussain.GdmSettings -y
-    flatpak install flathub com.flashforge.FlashPrint -y
-    flatpak install flathub org.gnome.meld -y # For file comparison
-    flatpak install flathub com.nextcloud.desktopclient.nextcloud -y
-    flatpak install flathub com.github.xournalpp.xournalpp -y # For PDF annotation
+    sudo flatpak install --system flathub net.waterfox.waterfox -y
+    sudo flatpak install --system flathub md.obsidian.Obsidian -y
+    sudo flatpak install --system flathub org.libreoffice.LibreOffice -y
+    sudo flatpak install --system flathub org.gnome.SimpleScan -y
+    sudo flatpak install --system flathub org.blender.Blender -y
+    sudo flatpak install --system flathub com.mattjakeman.ExtensionManager -y
+    sudo flatpak install --system flathub org.qbittorrent.qBittorrent -y
+    sudo flatpak install --system flathub io.missioncenter.MissionCenter -y
+    sudo flatpak install --system flathub io.github.shiftey.Desktop -y #Github Desktop
+    sudo flatpak install --system --noninteractive flathub io.github.realmazharhussain.GdmSettings -y
+    sudo flatpak install --system flathub com.flashforge.FlashPrint -y
+    sudo flatpak install --system flathub org.gnome.meld -y # For file comparison
+    sudo flatpak install --system flathub com.nextcloud.desktopclient.nextcloud -y
+    sudo flatpak install --system flathub com.github.xournalpp.xournalpp -y # For PDF annotation
 
 # SSH & Firewall - for arch systems
     sudo pacman -S openssh --noconfirm
@@ -60,8 +60,8 @@ username=$(id -un)
     paru -S papirus-icon-theme-git --noconfirm
 
 # Gimp
-    flatpak install flathub org.gimp.GIMP -y
-    flatpak install flathub org.darktable.Darktable -y
+    sudo flatpak install --system flathub org.gimp.GIMP -y
+    sudo flatpak install --system flathub org.darktable.Darktable -y
     paru -S opencl-amd --noconfirm
 
 # Synology
@@ -162,7 +162,7 @@ username=$(id -un)
             echo "[*] NVIDIA GPU detected; installing NVIDIA Vulkan runtime components..."
             sudo pacman -S --needed --noconfirm nvidia nvidia-utils lib32-nvidia-utils
         fi
-    flatpak install flathub com.discordapp.Discord -y
+    sudo flatpak install --system flathub com.discordapp.Discord -y
 
 # Tailscale
     paru -S tailscale --noconfirm

@@ -1,6 +1,10 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+set -euo pipefail
+
+trap 'echo "# Installer failed at line ${LINENO}: ${BASH_COMMAND}" >&2' ERR
+
 username=$(id -un)
 builddir=$(pwd)
 
@@ -8,6 +12,22 @@ builddir=$(pwd)
 : "${YELLOW:=''}"
 : "${GREEN:=''}"
 : "${NC:=''}"
+
+configure_pipewire_session() {
+    sudo mkdir -p /etc/xdg/autostart
+
+    if [ -f /usr/share/applications/pipewire.desktop ]; then
+        sudo ln -snf /usr/share/applications/pipewire.desktop /etc/xdg/autostart/pipewire.desktop
+    fi
+
+    if [ -f /usr/share/applications/pipewire-pulse.desktop ]; then
+        sudo ln -snf /usr/share/applications/pipewire-pulse.desktop /etc/xdg/autostart/pipewire-pulse.desktop
+    fi
+
+    if [ -f /usr/share/applications/wireplumber.desktop ]; then
+        sudo ln -snf /usr/share/applications/wireplumber.desktop /etc/xdg/autostart/wireplumber.desktop
+    fi
+}
 
 
 # Create Directories if needed
@@ -23,11 +43,11 @@ builddir=$(pwd)
             fi
             chown -R "$username":"$username" /home/"$username"/.icons
         # Background and Profile Image Directories
-            if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
+            if [ ! -d "$HOME/Pictures/backgrounds" ]; then
                 mkdir -p /home/"$username"/Pictures/backgrounds
             fi
             chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
-            if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
+            if [ ! -d "$HOME/Pictures/profile-image" ]; then
                 mkdir -p /home/"$username"/Pictures/profile-image
             fi
             chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
@@ -71,7 +91,7 @@ builddir=$(pwd)
 # Ensure Pipewire for audio
     sudo pacman -S pipewire wireplumber pipewire-pulse pipewire-alsa --noconfirm
     sudo pacman -S gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav --noconfirm
-    systemctl --user restart pipewire pipewire-pulse wireplumber
+    configure_pipewire_session
 
 # Add Paru, Flatpak, & Dependencies if needed
     echo -e "${YELLOW}Installing Paru, Flatpak, & Dependencies...${NC}"
@@ -85,8 +105,8 @@ builddir=$(pwd)
         # Add Flatpak
         echo "# Installing Flatpak..."
         sudo pacman -S flatpak --noconfirm
-        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-        flatpak remote-add --if-not-exists flathub-beta https://flathub.org/beta-repo/flathub-beta.flatpakrepo
+        sudo flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        sudo flatpak remote-add --system --if-not-exists flathub-beta https://flathub.org/beta-repo/flathub-beta.flatpakrepo
 
 # Installing more Depends
         echo "# Installing more dependencies..."
