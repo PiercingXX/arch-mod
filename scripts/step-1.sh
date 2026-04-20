@@ -68,7 +68,7 @@ configure_pipewire_session() {
         sudo pacman -S trash-cli --noconfirm
         sudo pacman -S base-devel gcc cmake meson --noconfirm
         sudo pacman -S git make pkg-config --noconfirm
-    sudo pacman -S rust --noconfirm
+        sudo pacman -S rust --noconfirm
         sudo pacman -S fastfetch --noconfirm
         sudo pacman -S tree --noconfirm
         sudo pacman -S zoxide --noconfirm
@@ -88,6 +88,7 @@ configure_pipewire_session() {
         sudo pacman -S sshpass --noconfirm
         sudo pacman -S htop --noconfirm
         sudo pacman -S glm --noconfirm
+        sudo pacman -S --needed --noconfirm webkit2gtk-4.1
 # Ensure Pipewire for audio
     sudo pacman -S pipewire wireplumber pipewire-pulse pipewire-alsa --noconfirm
     sudo pacman -S gst-plugins-good gst-plugins-bad gst-plugins-ugly gst-libav --noconfirm
