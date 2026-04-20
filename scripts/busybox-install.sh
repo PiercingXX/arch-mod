@@ -1,7 +1,7 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
-set -euo pipefail
+set -uo pipefail
 
 PKGMGR=(paru -S --noconfirm --needed)
 

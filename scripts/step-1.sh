@@ -1,7 +1,7 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
-set -euo pipefail
+set -uo pipefail
 
 trap 'echo "# Installer failed at line ${LINENO}: ${BASH_COMMAND}" >&2' ERR
 
