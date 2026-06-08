@@ -18,6 +18,7 @@ username=$(id -un)
     paru -S vlc --noconfirm
     paru -S ventoy-bin --noconfirm
     paru -S proton-vpn-gtk-app --noconfirm
+    sudo pacman -S --noconfirm github-cli
     sudo flatpak install --system flathub net.waterfox.waterfox -y
     sudo flatpak install --system flathub md.obsidian.Obsidian -y
     sudo flatpak install --system flathub org.libreoffice.LibreOffice -y
@@ -30,7 +31,6 @@ username=$(id -un)
     sudo flatpak install --system --noninteractive flathub io.github.realmazharhussain.GdmSettings -y
     sudo flatpak install --system flathub com.flashforge.FlashPrint -y
     sudo flatpak install --system flathub org.gnome.meld -y # For file comparison
-    sudo flatpak install --system flathub com.nextcloud.desktopclient.nextcloud -y
     sudo flatpak install --system flathub com.github.xournalpp.xournalpp -y # For PDF annotation
 
 # SSH & Firewall - for arch systems
