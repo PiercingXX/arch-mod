@@ -7,8 +7,8 @@ SET_DEFAULT_PRINTER="${SET_DEFAULT_PRINTER:-1}"
 
 CANON_PRINTER_NAME="${CANON_PRINTER_NAME:-${PRINTER_NAME:-Canon-D530}}"
 CANON_DEVICE_URI="${CANON_DEVICE_URI:-${DEVICE_URI:-}}"
-CANON_PREFERRED_PPD="${CANON_PREFERRED_PPD:-${PREFERRED_PPD:-/usr/share/cups/model/CNRCUPSD560ZK.ppd}}"
-CANON_FALLBACK_PPD="${CANON_FALLBACK_PPD:-${FALLBACK_PPD:-/usr/share/cups/model/CNRCUPSD560ZS.ppd}}"
+CANON_PREFERRED_PPD="${CANON_PREFERRED_PPD:-${PREFERRED_PPD:-/usr/share/cups/model/CNRCUPSD560ZS.ppd}}"
+CANON_FALLBACK_PPD="${CANON_FALLBACK_PPD:-${FALLBACK_PPD:-/usr/share/cups/model/CNRCUPSD560ZK.ppd}}"
 CANON_DRIVER_PACKAGE="${CANON_DRIVER_PACKAGE:-${DRIVER_PACKAGE:-cnrdrvcups-lb-bin}}"
 RUN_TEST_PRINT="${RUN_TEST_PRINT:-1}"
 APPLY_LIBREOFFICE_FLATPAK_FIX="${APPLY_LIBREOFFICE_FLATPAK_FIX:-1}"
@@ -96,29 +96,71 @@ ensure_canon_backend_installed() {
   die "Canon backend not found/executable at ${backend_path}. Reinstall ${CANON_DRIVER_PACKAGE}."
 }
 
+find_existing_canon_uri() {
+  lpstat -v 2>/dev/null | awk '/^device for / && /usb:\/\/Canon\/D530\/D560\?serial=/{print $NF; exit}'
+}
+
+find_canon_uri_from_lsusb() {
+  local serial
+
+  command -v lsusb >/dev/null 2>&1 || return 1
+
+  serial="$(lsusb -v -d 04a9:2775 2>/dev/null | awk '/iSerial/{print $NF; exit}')"
+  [[ -n "$serial" ]] || return 1
+
+  printf 'usb://Canon/D530/D560?serial=%s&interface=1\n' "$serial"
+}
+
+find_canon_backend_uri() {
+  local lp_node
+
+  command -v udevadm >/dev/null 2>&1 || return 1
+
+  for lp_node in /dev/usb/lp*; do
+    [[ -e "$lp_node" ]] || continue
+
+    if udevadm info -a -n "$lp_node" 2>/dev/null | grep -q 'ATTRS{idVendor}=="04a9"'; then
+      printf 'cnusbufr2:%s\n' "$lp_node"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 find_canon_device_uri() {
-  local uri lp_node
+  local uri
 
   if [[ -n "$CANON_DEVICE_URI" && "$CANON_DEVICE_URI" != 'auto' ]]; then
     printf '%s\n' "$CANON_DEVICE_URI"
     return 0
   fi
 
-  # Prefer native CUPS USB URI if available; this avoids lp device I/O issues on some systems.
-  uri="$(lpinfo -v 2>/dev/null | awk '/^direct usb:\/\//{print $2; exit}')"
+  uri="$(find_canon_backend_uri)"
   if [[ -n "$uri" ]]; then
     printf '%s\n' "$uri"
     return 0
   fi
 
-  for lp_node in /dev/usb/lp*; do
-    if [[ -e "$lp_node" ]]; then
-      printf 'cnusbufr2:%s\n' "$lp_node"
-      return 0
-    fi
-  done
+  uri="$(find_existing_canon_uri)"
+  if [[ -n "$uri" ]]; then
+    printf '%s\n' "$uri"
+    return 0
+  fi
 
-  die 'No /dev/usb/lp* device found for Canon printer. Ensure it is connected/powered, then retry.'
+  uri="$(lpinfo -v 2>/dev/null | awk '/^direct usb:\/\/Canon\//{print $2; exit}')"
+  if [[ -n "$uri" ]]; then
+    printf '%s\n' "$uri"
+    return 0
+  fi
+
+  uri="$(find_canon_uri_from_lsusb)"
+  if [[ -n "$uri" ]]; then
+    printf '%s\n' "$uri"
+    return 0
+  fi
+
+  die 'Unable to resolve a Canon D530 device URI automatically. If multiple printers are attached, set CANON_DEVICE_URI explicitly and rerun.'
 }
 
 require_cmd() {
@@ -277,11 +319,15 @@ configure_canon_d530() {
   local ppd canon_uri
 
   log 'Configuring Canon D530 printer'
-  install_arch_packages cups
+  install_arch_packages cups usbutils
   ensure_cups_running
   require_cmd lpadmin
   require_cmd lpstat
   require_cmd lpoptions
+
+  if command -v modprobe >/dev/null 2>&1; then
+    sudo modprobe usblp || true
+  fi
 
   install_aur_package "$CANON_DRIVER_PACKAGE"
   ensure_canon_backend_installed
@@ -299,6 +345,10 @@ configure_canon_d530() {
   
   # Configure the printer with proper URI and PPD
   sudo lpadmin -p "$CANON_PRINTER_NAME" -E -v "$canon_uri" -P "$ppd"
+
+  if [[ "$canon_uri" == usb://* ]]; then
+    sudo lpadmin -p "$CANON_PRINTER_NAME" -o usb-no-reattach-default=true
+  fi
   
   # Explicitly enable and accept print requests (must use sudo for persistence)
   sudo cupsenable "$CANON_PRINTER_NAME"
