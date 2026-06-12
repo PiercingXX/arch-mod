@@ -134,6 +134,7 @@ install_terminal_minimal_session() {
 
 window_manager_menu() {
     local options=(
+        "Install Awesome"
         "Install Hyprland"
         "Install Sway"
         "Install i3"
@@ -158,6 +159,9 @@ window_manager_menu() {
 
         wm_choice="$wm_choices"
         case $wm_choice in
+            "Install Awesome")
+                run_wm_install_script "Awesome" "awesome-install.sh"
+                ;;
             "Install Hyprland")
                 run_wm_install_script "Hyprland" "hyprland-install.sh"
                 ;;
