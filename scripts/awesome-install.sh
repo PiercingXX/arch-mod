@@ -36,6 +36,9 @@ ${PKGMGR} xdotool
 ${PKGMGR} arandr
 ${PKGMGR} libnotify
 
+echo "Installing gesture recognition..."
+${PKGMGR} libinput-gestures
+
 echo "Installing terminal, editor, and font tools..."
 ${PKGMGR} kitty
 ${PKGMGR} neovim

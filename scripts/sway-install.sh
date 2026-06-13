@@ -34,6 +34,9 @@ ${PKGMGR} hyprshot
 ${PKGMGR} brightnessctl
 ${PKGMGR} light
 
+echo "Installing gesture recognition..."
+${PKGMGR} libinput-gestures
+
 echo "Installing auth/session helpers..."
 ${PKGMGR} polkit-gnome
 ${PKGMGR} plasma-workspace

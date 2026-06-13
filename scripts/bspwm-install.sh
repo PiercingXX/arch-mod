@@ -32,6 +32,9 @@ ${PKGMGR} flameshot
 ${PKGMGR} sxiv
 ${PKGMGR} zathura
 
+echo "Installing gesture recognition..."
+${PKGMGR} libinput-gestures
+
 echo "Installing terminal, drag/drop and input tools..."
 ${PKGMGR} kitty
 ${PKGMGR} dragon-drag-and-drop

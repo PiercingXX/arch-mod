@@ -28,6 +28,9 @@ ${PKGMGR} xorg-xev
 ${PKGMGR} numlockx
 ${PKGMGR} feh
 
+echo "Installing gesture recognition..."
+${PKGMGR} libinput-gestures
+
 echo "Installing launcher/menu and screenshot tools..."
 ${PKGMGR} fuzzel
 ${PKGMGR} nwg-drawer
