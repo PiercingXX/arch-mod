@@ -27,6 +27,7 @@ ${PKGMGR} xorg-setxkbmap
 ${PKGMGR} xorg-xev
 ${PKGMGR} numlockx
 ${PKGMGR} feh
+${PKGMGR} xcape
 
 echo "Installing gesture recognition..."
 ${PKGMGR} libinput-gestures
