@@ -139,6 +139,7 @@ window_manager_menu() {
         "Install Sway"
         "Install i3"
         "Install bspwm"
+        "Install Qtile"
         "Install BusyBox Profile"
         "Install Terminal Minimal Session"
         "Back"
@@ -173,6 +174,9 @@ window_manager_menu() {
                 ;;
             "Install bspwm")
                 run_wm_install_script "bspwm" "bspwm-install.sh"
+                ;;
+            "Install Qtile")
+                run_wm_install_script "Qtile" "qtile-install.sh"
                 ;;
             "Install BusyBox Profile")
                 run_wm_install_script "BusyBox Profile" "busybox-install.sh"
