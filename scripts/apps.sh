@@ -71,53 +71,68 @@ username=$(id -un)
     #Synology Drive doesnt support wayland so run this...
     QT_QPA_PLATFORM=xcb
 
-# Yazi
-    paru -S yazi-nightly-bin --noconfirm
-    paru -S ffmpeg --noconfirm
-    paru -S 7zip --noconfirm
-    paru -S jq --noconfirm
-    paru -S poppler --noconfirm
-    paru -S fd --noconfirm
-    paru -S ripgrep --noconfirm
-    paru -S fzf --noconfirm
-    paru -S zoxide --noconfirm
-    paru -S resvg --noconfirm
-    paru -S imagemagick --noconfirm
-    ya pkg add dedukun/bookmarks
-    ya pkg add yazi-rs/plugins:mount
-    ya pkg add dedukun/relative-motions
-    ya pkg add yazi-rs/plugins:chmod
-    ya pkg add yazi-rs/plugins:smart-enter
-    ya pkg add AnirudhG07/rich-preview
-    ya pkg add grappas/wl-clipboard
-    ya pkg add Rolv-Apneseth/starship
-    ya pkg add yazi-rs/plugins:full-border
-    ya pkg add uhs-robert/recycle-bin
-    ya pkg add yazi-rs/plugins:diff
+# Yazi & Neovim
+    echo -e "${YELLOW}Installing Yazi (file‑manager) and Neovim…${NC}"
+    echo "Installing build and runtime dependencies..."
+    sudo pacman -S --needed --noconfirm \
+        base-devel cmake ninja curl git gettext \
+        nodejs npm ripgrep lua51 python python-pip python-pynvim chafa \
+        rust cargo file ffmpeg 7zip jq poppler fd fzf zoxide resvg imagemagick wl-clipboard
+    SOURCE_BUILD_ROOT="$(pwd)"
 
-# Nvim & Depends
-    echo "Installing Neovim dependencies..."
-    sudo pacman -S nodejs npm --noconfirm
-    sudo pacman -S ripgrep --noconfirm
-    paru -S lua51 --noconfirm
-    sudo pacman -S python --noconfirm
-    sudo pacman -S python-pip --noconfirm
-    paru -S python-pynvim --noconfirm || python3 -m pip install --user pynvim
-    python3 -m pip install --user --upgrade pynvim 2>/dev/null || true
-    sudo pacman -S chafa --noconfirm
-
-    echo "Installing Neovim Nightly (required): neovim-nightly-bin"
+    echo "Building Neovim from source..."
     sudo pacman -Rs neovim --noconfirm 2>/dev/null || true
+    NVIM_BUILD_DIR="$(mktemp -d)"
+    git clone --depth 1 --branch master https://github.com/neovim/neovim.git "$NVIM_BUILD_DIR/neovim"
+    cd "$NVIM_BUILD_DIR/neovim" || exit
+    make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local
+    sudo make CMAKE_INSTALL_PREFIX=/usr/local install
+    cd "$SOURCE_BUILD_ROOT" || exit
+    rm -rf "$NVIM_BUILD_DIR"
 
-    if ! paru -S neovim-nightly-bin --noconfirm; then
-        echo "⚠ WARNING: neovim-nightly-bin failed to install"
-    fi
+    # Ensure /usr/local/bin is on PATH for all users
+    sudo tee /etc/profile.d/local-path.sh >/dev/null <<'EOF'
+export PATH="/usr/local/bin:$PATH"
+EOF
+    sudo chmod 644 /etc/profile.d/local-path.sh
+    export PATH="/usr/local/bin:$PATH"
+    hash -r
 
-    if command -v nvim &> /dev/null; then
-        echo "✓ Neovim verified: $(nvim --version | head -n1)"
+    if [[ -x /usr/local/bin/nvim ]]; then
+        echo "Neovim verified: $(/usr/local/bin/nvim --version | head -n1)"
     else
-        echo "⚠ WARNING: Neovim is not installed"
+        echo "WARNING: Neovim source install did not produce /usr/local/bin/nvim"
     fi
+
+    echo "Building Yazi from source..."
+    YAZI_BUILD_DIR="$(mktemp -d)"
+    git clone --depth 1 https://github.com/sxyazi/yazi.git "$YAZI_BUILD_DIR/yazi"
+    cd "$YAZI_BUILD_DIR/yazi" || exit
+    cargo build --release --locked
+    sudo install -Dm755 target/release/yazi /usr/local/bin/yazi
+    sudo install -Dm755 target/release/ya /usr/local/bin/ya
+    cd "$SOURCE_BUILD_ROOT" || exit
+    rm -rf "$YAZI_BUILD_DIR"
+    hash -r
+
+    if [[ -x /usr/local/bin/yazi && -x /usr/local/bin/ya ]]; then
+        echo "Yazi verified: $(/usr/local/bin/yazi --version | head -n1)"
+    else
+        echo "WARNING: Yazi source install did not produce /usr/local/bin/yazi and /usr/local/bin/ya"
+    fi
+
+    # Install plugins
+    /usr/local/bin/ya pkg add dedukun/bookmarks
+    /usr/local/bin/ya pkg add yazi-rs/plugins:mount
+    /usr/local/bin/ya pkg add dedukun/relative-motions
+    /usr/local/bin/ya pkg add yazi-rs/plugins:chmod
+    /usr/local/bin/ya pkg add yazi-rs/plugins:smart-enter
+    /usr/local/bin/ya pkg add AnirudhG07/rich-preview
+    /usr/local/bin/ya pkg add grappas/wl-clipboard
+    /usr/local/bin/ya pkg add Rolv-Apneseth/starship
+    /usr/local/bin/ya pkg add yazi-rs/plugins:full-border
+    /usr/local/bin/ya pkg add uhs-robert/recycle-bin
+    /usr/local/bin/ya pkg add yazi-rs/plugins:diff
 
 # Opencode
     paru -S opencode-desktop-bin --noconfirm
@@ -125,7 +140,6 @@ username=$(id -un)
 # VScode
     paru -S visual-studio-code-bin --noconfirm
     paru -S code-nautilus-git --noconfirm
-
 
 # Kdenlive
 #    flatpak install flathub org.kde.kdenlive -y
